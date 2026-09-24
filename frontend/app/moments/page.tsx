@@ -6,11 +6,13 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { momentApi, uploadApi, interactionApi } from '@/lib/api';
 import { formatTime } from '@/lib/time';
-import { Moment, Comment } from '@/types';
-import { 
-  Plus, 
-  Heart, 
-  MessageCircle, 
+import { Moment, Comment, Visibility } from '@/types';
+import VisibilitySelect from '@/components/VisibilitySelect';
+import VisibilityBadge from '@/components/VisibilityBadge';
+import {
+  Plus,
+  Heart,
+  MessageCircle,
   Send,
   X,
   Image as ImageIcon,
@@ -24,6 +26,7 @@ export default function MomentsPage() {
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [visibility, setVisibility] = useState<Visibility>('PUBLIC');
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const { user } = useAuth();
   const router = useRouter();
@@ -79,10 +82,12 @@ export default function MomentsPage() {
     try {
       await momentApi.create({
         content,
-        images: uploadedImages
+        images: uploadedImages,
+        visibility
       });
       setContent('');
       setUploadedImages([]);
+      setVisibility('PUBLIC');
       loadMoments();
     } catch (error) {
       alert('发布失败，请重试');
@@ -140,6 +145,8 @@ export default function MomentsPage() {
             placeholder="分享你的种植日常..."
           />
 
+          <VisibilitySelect value={visibility} onChange={setVisibility} />
+
           {uploadedImages.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
               {uploadedImages.map((img, idx) => (
@@ -189,7 +196,7 @@ export default function MomentsPage() {
         <div className="card p-12 text-center">
           <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500">还没有动态</p>
-          <p className="text-gray-400 text-sm mt-2">关注更多花友来查看他们的动态</p>
+          <p className="text-gray-400 text-sm mt-2">这里会展示公开动态、你关注花友的动态和你自己的动态</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -223,6 +230,7 @@ export default function MomentsPage() {
                     <span className="text-sm text-gray-400">
                       {formatTime(moment.createdAt)}
                     </span>
+                    <VisibilityBadge visibility={moment.visibility} />
                   </div>
 
                   {moment.content && (

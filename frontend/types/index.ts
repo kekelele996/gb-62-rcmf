@@ -16,12 +16,16 @@ export type DiaryTag = 'SOWING' | 'GERMINATION' | 'FLOWERING' | 'HARVEST' | 'CAR
 
 export type TopicCategory = 'BALCONY_GARDEN' | 'COURTYARD_DESIGN' | 'INDOOR_PLANTS' | 'HYDROPONICS' | 'COMPOST' | 'OTHER';
 
+// 内容可见范围
+export type Visibility = 'PUBLIC' | 'FOLLOWERS';
+
 export interface Diary {
   id: string;
   title: string;
   content: string;
   images: string[];
   tags: DiaryTag[];
+  visibility: Visibility;
   authorId: string;
   author: Pick<User, 'id' | 'username' | 'avatar' | 'level'>;
   _count?: {
@@ -54,6 +58,7 @@ export interface Moment {
   id: string;
   content: string;
   images: string[];
+  visibility: Visibility;
   authorId: string;
   author: Pick<User, 'id' | 'username' | 'avatar' | 'level'>;
   comments?: Comment[];

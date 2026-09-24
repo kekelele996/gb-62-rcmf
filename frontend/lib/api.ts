@@ -42,12 +42,12 @@ export const authApi = {
 };
 
 export const diaryApi = {
-  getList: (params?: { page?: number; limit?: number; tag?: string; userId?: string }) => 
+  getList: (params?: { page?: number; limit?: number; tag?: string; userId?: string }) =>
     api.get('/diaries', { params }),
   getById: (id: string) => api.get(`/diaries/${id}`),
-  create: (data: { title: string; content: string; images?: string[]; tags?: string[] }) => 
+  create: (data: { title: string; content: string; images?: string[]; tags?: string[]; visibility?: 'PUBLIC' | 'FOLLOWERS' }) =>
     api.post('/diaries', data),
-  update: (id: string, data: Partial<{ title: string; content: string; images?: string[]; tags?: string[] }>) => 
+  update: (id: string, data: Partial<{ title: string; content: string; images?: string[]; tags?: string[]; visibility?: 'PUBLIC' | 'FOLLOWERS' }>) =>
     api.put(`/diaries/${id}`, data),
   delete: (id: string) => api.delete(`/diaries/${id}`),
 };
@@ -64,11 +64,12 @@ export const postApi = {
 };
 
 export const momentApi = {
-  getList: (params?: { page?: number; limit?: number }) => 
+  getList: (params?: { page?: number; limit?: number }) =>
     api.get('/moments', { params }),
-  getByUser: (userId: string, params?: { page?: number; limit?: number }) => 
+  getByUser: (userId: string, params?: { page?: number; limit?: number }) =>
     api.get(`/moments/user/${userId}`, { params }),
-  create: (data: { content: string; images?: string[] }) => 
+  getById: (id: string) => api.get(`/moments/${id}`),
+  create: (data: { content: string; images?: string[]; visibility?: 'PUBLIC' | 'FOLLOWERS' }) =>
     api.post('/moments', data),
   delete: (id: string) => api.delete(`/moments/${id}`),
 };

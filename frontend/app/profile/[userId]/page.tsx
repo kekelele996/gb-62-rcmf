@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { userApi, diaryApi, momentApi } from '@/lib/api';
 import { formatTime } from '@/lib/time';
 import { User, Diary, Moment } from '@/types';
+import VisibilityBadge from '@/components/VisibilityBadge';
 import { 
   BookOpen, 
   Users, 
@@ -246,8 +247,9 @@ export default function ProfilePage() {
                     ))}
                   </div>
                 )}
-                <p className="text-sm text-gray-400 mt-3">
+                <p className="text-sm text-gray-400 mt-3 flex items-center gap-2">
                   {formatTime(diary.createdAt)}
+                  <VisibilityBadge visibility={diary.visibility} />
                 </p>
               </Link>
             ))}
@@ -280,8 +282,9 @@ export default function ProfilePage() {
                     ))}
                   </div>
                 )}
-                <p className="text-sm text-gray-400 mt-3">
+                <p className="text-sm text-gray-400 mt-3 flex items-center gap-2">
                   {formatTime(moment.createdAt)}
+                  <VisibilityBadge visibility={moment.visibility} />
                 </p>
               </div>
             ))}

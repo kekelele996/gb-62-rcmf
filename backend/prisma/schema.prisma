@@ -27,6 +27,14 @@ enum DiaryTag {
   OTHER
 }
 
+// 内容可见范围枚举
+enum Visibility {
+  // 公开：所有登录花友可见
+  PUBLIC
+  // 仅关注者：仅作者本人和已关注作者的花友可见
+  FOLLOWERS
+}
+
 // 话题分类枚举
 enum TopicCategory {
   BALCONY_GARDEN
@@ -92,6 +100,8 @@ model Diary {
   content     String
   images      String[]
   tags        DiaryTag[]
+  // 可见范围：公开 / 仅关注者
+  visibility  Visibility @default(PUBLIC)
   authorId    String    @db.ObjectId
   author      User      @relation(fields: [authorId], references: [id])
   
@@ -128,6 +138,8 @@ model Moment {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
   content     String
   images      String[]
+  // 可见范围：公开 / 仅关注者
+  visibility  Visibility @default(PUBLIC)
   authorId    String    @db.ObjectId
   author      User      @relation(fields: [authorId], references: [id])
   

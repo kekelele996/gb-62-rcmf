@@ -44,3 +44,34 @@ export const adminMiddleware = (req: AuthRequest, res: Response, next: NextFunct
   }
   next();
 };
+
+/**
+ * 可选认证：有合法令牌则解析登录用户，没有令牌也放行
+ * （用于公开内容列表等游客可访问、登录后内容更多的接口）
+ */
+export const optionalAuthMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return next();
+    }
+
+    const token = authHeader.split(' ')[1];
+    const payload = verifyToken(token);
+
+    if (payload) {
+      const user = await prisma.user.findUnique({
+        where: { id: payload.userId }
+      });
+      if (user) {
+        req.userId = payload.userId;
+        req.isAdmin = user.isAdmin;
+      }
+    }
+
+    next();
+  } catch (error) {
+    next();
+  }
+};

@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { diaryApi, uploadApi } from '@/lib/api';
-import { DiaryTag } from '@/types';
+import { DiaryTag, Visibility } from '@/types';
+import VisibilitySelect from '@/components/VisibilitySelect';
 import { ArrowLeft, Image as ImageIcon, X, Plus } from 'lucide-react';
 
 const tagOptions: DiaryTag[] = ['SOWING', 'GERMINATION', 'FLOWERING', 'HARVEST', 'CARE', 'OTHER'];
@@ -24,6 +25,7 @@ export default function NewDiaryPage() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [visibility, setVisibility] = useState<Visibility>('PUBLIC');
   const router = useRouter();
 
   const toggleTag = (tag: DiaryTag) => {
@@ -73,7 +75,8 @@ export default function NewDiaryPage() {
         title,
         content,
         images: uploadedImages,
-        tags: selectedTags
+        tags: selectedTags,
+        visibility
       });
       router.push('/diaries');
     } catch (error) {
@@ -142,6 +145,13 @@ export default function NewDiaryPage() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="card p-4">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            谁可以看
+          </label>
+          <VisibilitySelect value={visibility} onChange={setVisibility} />
         </div>
 
         <div className="card p-4">

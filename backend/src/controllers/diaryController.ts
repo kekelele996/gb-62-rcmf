@@ -2,11 +2,24 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import prisma from '../config/prisma';
 import { addPoints } from './authController';
+import {
+  Visibility,
+  getFollowingIds,
+  buildFeedVisibilityFilter,
+  buildProfileVisibilityFilter,
+  canViewContent
+} from '../utils/visibility';
 
 type DiaryTag = 'SOWING' | 'GERMINATION' | 'FLOWERING' | 'HARVEST' | 'CARE' | 'OTHER';
 
+const VISIBILITIES: Visibility[] = ['PUBLIC', 'FOLLOWERS'];
+
+const parseVisibility = (value: unknown): Visibility =>
+  VISIBILITIES.includes(value as Visibility) ? (value as Visibility) : 'PUBLIC';
+
 export const createDiary = async (req: AuthRequest, res: Response) => {
   const { title, content, images, tags } = req.body;
+  const visibility = parseVisibility(req.body.visibility);
 
   try {
     const diary = await prisma.diary.create({
@@ -15,6 +28,7 @@ export const createDiary = async (req: AuthRequest, res: Response) => {
         content,
         images: images || [],
         tags: tags || [],
+        visibility,
         authorId: req.userId!
       },
       include: {
@@ -37,18 +51,34 @@ export const createDiary = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getDiaries = async (req: Request, res: Response) => {
+export const getDiaries = async (req: AuthRequest, res: Response) => {
   const { page = 1, limit = 10, tag, userId } = req.query;
   const skip = (Number(page) - 1) * Number(limit);
+  const viewerId = req.userId;
 
   try {
-    const where: any = {};
+    const conditions: any[] = [];
+
     if (tag) {
-      where.tags = { has: tag as DiaryTag };
+      conditions.push({ tags: { has: tag as DiaryTag } });
     }
+
     if (userId) {
-      where.authorId = userId;
+      // 个人主页：按作者 + 可见范围过滤
+      const followingIds = await getFollowingIds(viewerId);
+      conditions.push({
+        authorId: userId as string,
+        ...buildProfileVisibilityFilter(userId as string, viewerId, followingIds)
+      });
+    } else if (viewerId) {
+      // 日记广场：公开日记 + 已关注花友的仅关注者日记 + 自己的日记
+      const followingIds = await getFollowingIds(viewerId);
+      conditions.push(buildFeedVisibilityFilter(viewerId, followingIds));
+    } else {
+      conditions.push({ visibility: { not: 'FOLLOWERS' } });
     }
+
+    const where = conditions.length === 1 ? conditions[0] : { AND: conditions };
 
     const diaries = await prisma.diary.findMany({
       where,
@@ -86,8 +116,9 @@ export const getDiaries = async (req: Request, res: Response) => {
   }
 };
 
-export const getDiaryById = async (req: Request, res: Response) => {
+export const getDiaryById = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const viewerId = req.userId;
 
   try {
     const diary = await prisma.diary.findUnique({
@@ -123,6 +154,11 @@ export const getDiaryById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: '日记不存在' });
     }
 
+    const followingIds = await getFollowingIds(viewerId);
+    if (!canViewContent(diary, viewerId, followingIds, req.isAdmin)) {
+      return res.status(403).json({ error: '无权查看该日记' });
+    }
+
     res.json(diary);
   } catch (error) {
     res.status(500).json({ error: '获取失败' });
@@ -131,7 +167,7 @@ export const getDiaryById = async (req: Request, res: Response) => {
 
 export const updateDiary = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const { title, content, images, tags } = req.body;
+  const { title, content, images, tags, visibility } = req.body;
 
   try {
     const diary = await prisma.diary.findUnique({ where: { id } });
@@ -150,7 +186,8 @@ export const updateDiary = async (req: AuthRequest, res: Response) => {
         title: title || undefined,
         content: content || undefined,
         images: images || undefined,
-        tags: tags || undefined
+        tags: tags || undefined,
+        visibility: visibility ? parseVisibility(visibility) : undefined
       }
     });
 

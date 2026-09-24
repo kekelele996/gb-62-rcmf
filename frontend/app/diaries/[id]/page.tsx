@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { diaryApi, interactionApi } from '@/lib/api';
 import { formatTime } from '@/lib/time';
 import { Diary, Comment } from '@/types';
+import VisibilityBadge from '@/components/VisibilityBadge';
 import { 
   ArrowLeft, 
   Heart, 
@@ -148,6 +149,7 @@ export default function DiaryDetailPage() {
                 <span className="text-sm text-gray-400">
                   {formatTime(diary.createdAt)}
                 </span>
+                <VisibilityBadge visibility={diary.visibility} />
               </div>
             </div>
           </Link>
