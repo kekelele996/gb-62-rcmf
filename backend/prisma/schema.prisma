@@ -27,6 +27,12 @@ enum DiaryTag {
   OTHER
 }
 
+// 动态可见范围枚举
+enum MomentVisibility {
+  PUBLIC
+  FOLLOWERS
+}
+
 // 话题分类枚举
 enum TopicCategory {
   BALCONY_GARDEN
@@ -128,6 +134,9 @@ model Moment {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
   content     String
   images      String[]
+  // 可见范围：PUBLIC 所有登录用户可见，FOLLOWERS 仅作者和关注者可见
+  // 旧数据可能没有该字段，按 PUBLIC 处理
+  visibility  MomentVisibility? @default(PUBLIC)
   authorId    String    @db.ObjectId
   author      User      @relation(fields: [authorId], references: [id])
   

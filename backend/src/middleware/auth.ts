@@ -38,6 +38,31 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
   }
 };
 
+export const optionalAuthMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const payload = verifyToken(token);
+
+      if (payload) {
+        const user = await prisma.user.findUnique({
+          where: { id: payload.userId }
+        });
+
+        if (user) {
+          req.userId = payload.userId;
+          req.isAdmin = user.isAdmin;
+        }
+      }
+    }
+  } catch (error) {
+    // 认证失败时按未登录处理，不阻断请求
+  }
+  next();
+};
+
 export const adminMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
   if (!req.isAdmin) {
     return res.status(403).json({ error: '需要管理员权限' });

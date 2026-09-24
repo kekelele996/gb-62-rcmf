@@ -68,7 +68,7 @@ export const momentApi = {
     api.get('/moments', { params }),
   getByUser: (userId: string, params?: { page?: number; limit?: number }) => 
     api.get(`/moments/user/${userId}`, { params }),
-  create: (data: { content: string; images?: string[] }) => 
+  create: (data: { content: string; images?: string[]; visibility?: 'PUBLIC' | 'FOLLOWERS' }) =>
     api.post('/moments', data),
   delete: (id: string) => api.delete(`/moments/${id}`),
 };

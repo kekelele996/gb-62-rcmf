@@ -5,13 +5,13 @@ import {
   getUserMoments, 
   deleteMoment 
 } from '../controllers/momentController';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth';
 
 const router = Router();
 
 router.post('/', authMiddleware, createMoment);
 router.get('/', authMiddleware, getMoments);
-router.get('/user/:userId', getUserMoments);
+router.get('/user/:userId', optionalAuthMiddleware, getUserMoments);
 router.delete('/:id', authMiddleware, deleteMoment);
 
 export default router;

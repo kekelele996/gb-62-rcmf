@@ -50,10 +50,13 @@ export interface Post {
   updatedAt: string;
 }
 
+export type MomentVisibility = 'PUBLIC' | 'FOLLOWERS';
+
 export interface Moment {
   id: string;
   content: string;
   images: string[];
+  visibility?: MomentVisibility;
   authorId: string;
   author: Pick<User, 'id' | 'username' | 'avatar' | 'level'>;
   comments?: Comment[];

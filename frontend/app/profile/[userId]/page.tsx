@@ -7,13 +7,14 @@ import { useAuth } from '@/context/AuthContext';
 import { userApi, diaryApi, momentApi } from '@/lib/api';
 import { formatTime } from '@/lib/time';
 import { User, Diary, Moment } from '@/types';
-import { 
-  BookOpen, 
-  Users, 
+import {
+  BookOpen,
+  Users,
   UserPlus,
   UserMinus,
   MessageCircle,
   Calendar,
+  Lock,
   User as UserIcon
 } from 'lucide-react';
 
@@ -280,9 +281,17 @@ export default function ProfilePage() {
                     ))}
                   </div>
                 )}
-                <p className="text-sm text-gray-400 mt-3">
-                  {formatTime(moment.createdAt)}
-                </p>
+                <div className="flex items-center space-x-2 mt-3">
+                  <p className="text-sm text-gray-400">
+                    {formatTime(moment.createdAt)}
+                  </p>
+                  {moment.visibility === 'FOLLOWERS' && (
+                    <span className="flex items-center space-x-1 text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
+                      <Lock className="w-3 h-3" />
+                      <span>仅关注者</span>
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>

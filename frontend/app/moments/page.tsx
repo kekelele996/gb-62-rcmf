@@ -6,20 +6,23 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { momentApi, uploadApi, interactionApi } from '@/lib/api';
 import { formatTime } from '@/lib/time';
-import { Moment, Comment } from '@/types';
-import { 
-  Plus, 
-  Heart, 
-  MessageCircle, 
+import { Moment, Comment, MomentVisibility } from '@/types';
+import {
+  Plus,
+  Heart,
+  MessageCircle,
   Send,
   X,
   Image as ImageIcon,
-  User as UserIcon
+  User as UserIcon,
+  Globe,
+  Lock
 } from 'lucide-react';
 
 export default function MomentsPage() {
   const [moments, setMoments] = useState<Moment[]>([]);
   const [content, setContent] = useState('');
+  const [visibility, setVisibility] = useState<MomentVisibility>('PUBLIC');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -79,9 +82,11 @@ export default function MomentsPage() {
     try {
       await momentApi.create({
         content,
-        images: uploadedImages
+        images: uploadedImages,
+        visibility
       });
       setContent('');
+      setVisibility('PUBLIC');
       setUploadedImages([]);
       loadMoments();
     } catch (error) {
@@ -162,18 +167,46 @@ export default function MomentsPage() {
           )}
 
           <div className="flex items-center justify-between">
-            <label className="flex items-center space-x-2 text-gray-500 cursor-pointer hover:text-green-500">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                className="hidden"
-                disabled={uploading}
-              />
-              <ImageIcon className="w-5 h-5" />
-              <span className="text-sm">{uploading ? '上传中...' : '添加图片'}</span>
-            </label>
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center space-x-2 text-gray-500 cursor-pointer hover:text-green-500">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  disabled={uploading}
+                />
+                <ImageIcon className="w-5 h-5" />
+                <span className="text-sm">{uploading ? '上传中...' : '添加图片'}</span>
+              </label>
+              <div className="flex items-center space-x-1 text-sm">
+                <button
+                  type="button"
+                  onClick={() => setVisibility('PUBLIC')}
+                  className={`flex items-center space-x-1 px-2 py-1 rounded-full ${
+                    visibility === 'PUBLIC'
+                      ? 'bg-green-100 text-green-600'
+                      : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <Globe className="w-4 h-4" />
+                  <span>公开</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVisibility('FOLLOWERS')}
+                  className={`flex items-center space-x-1 px-2 py-1 rounded-full ${
+                    visibility === 'FOLLOWERS'
+                      ? 'bg-purple-100 text-purple-600'
+                      : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>仅关注者</span>
+                </button>
+              </div>
+            </div>
             <button
               type="submit"
               disabled={submitting || (!content.trim() && uploadedImages.length === 0)}
@@ -223,6 +256,12 @@ export default function MomentsPage() {
                     <span className="text-sm text-gray-400">
                       {formatTime(moment.createdAt)}
                     </span>
+                    {moment.visibility === 'FOLLOWERS' && (
+                      <span className="flex items-center space-x-1 text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
+                        <Lock className="w-3 h-3" />
+                        <span>仅关注者</span>
+                      </span>
+                    )}
                   </div>
 
                   {moment.content && (

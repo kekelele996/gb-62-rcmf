@@ -1,16 +1,24 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import prisma from '../config/prisma';
 import { addPoints } from './authController';
 
+// 公开动态的查询条件（旧数据没有 visibility 字段，按公开处理）
+const PUBLIC_VISIBILITY_CONDITIONS = [
+  { visibility: 'PUBLIC' },
+  { visibility: null }
+];
+
 export const createMoment = async (req: AuthRequest, res: Response) => {
-  const { content, images } = req.body;
+  const { content, images, visibility } = req.body;
+  const momentVisibility = visibility === 'FOLLOWERS' ? 'FOLLOWERS' : 'PUBLIC';
 
   try {
     const moment = await prisma.moment.create({
       data: {
         content,
         images: images || [],
+        visibility: momentVisibility,
         authorId: req.userId!
       }
     });
@@ -50,10 +58,17 @@ export const getMoments = async (req: AuthRequest, res: Response) => {
 
     const followingIds = followings.map(f => f.followingId);
 
-    const where: any = {};
-    if (followingIds.length > 0) {
-      where.authorId = { in: followingIds };
-    }
+    // 花友圈信息流：公开动态 + 自己关注的人的动态 + 自己的动态
+    // 其中仅关注者可见的动态，只有作者本人或已关注作者的人能看到
+    const where: any = {
+      OR: [
+        { OR: PUBLIC_VISIBILITY_CONDITIONS },
+        { authorId: userId },
+        ...(followingIds.length > 0
+          ? [{ authorId: { in: followingIds }, visibility: 'FOLLOWERS' }]
+          : [])
+      ]
+    };
 
     const moments = await prisma.moment.findMany({
       where,
@@ -102,14 +117,34 @@ export const getMoments = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getUserMoments = async (req: Request, res: Response) => {
+export const getUserMoments = async (req: AuthRequest, res: Response) => {
   const { userId } = req.params;
   const { page = 1, limit = 20 } = req.query;
   const skip = (Number(page) - 1) * Number(limit);
+  const viewerId = req.userId;
 
   try {
+    // 仅作者本人或已关注作者的人可以看到"仅关注者"动态
+    let canSeeFollowersOnly = viewerId === userId;
+    if (!canSeeFollowersOnly && viewerId) {
+      const follow = await prisma.follow.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: viewerId,
+            followingId: userId
+          }
+        }
+      });
+      canSeeFollowersOnly = !!follow;
+    }
+
+    const where: any = { authorId: userId };
+    if (!canSeeFollowersOnly) {
+      where.OR = PUBLIC_VISIBILITY_CONDITIONS;
+    }
+
     const moments = await prisma.moment.findMany({
-      where: { authorId: userId },
+      where,
       include: {
         author: {
           select: {
@@ -128,7 +163,7 @@ export const getUserMoments = async (req: Request, res: Response) => {
       take: Number(limit)
     });
 
-    const total = await prisma.moment.count({ where: { authorId: userId } });
+    const total = await prisma.moment.count({ where });
 
     res.json({
       moments,
